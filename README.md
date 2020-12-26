@@ -32,6 +32,9 @@ or more devices with one of the supported chipsets:
  - HT6P20X
  - M1E-N
  - ax25-tx028
+ - NEC
+ - ORNO OR-GB-417GD
+ - BHC993BF
 
 ### Receive and decode RC codes
 
@@ -44,3 +47,6 @@ hand set.
 
 For the Raspberry Pi, clone the https://github.com/ninjablocks/433Utils project to
 compile a sniffer tool and transmission commands.
+
+To use with attiny look at using the PinChangeINTerrupt library and USE_PIN_CHANGE_INTERRUPT define
+For longer codes define RCSwitch64 to change from 32bit to 64bit codes and unsigned long long code variable
