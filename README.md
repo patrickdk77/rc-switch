@@ -5,7 +5,7 @@
 Use your Arduino or [Raspberry Pi](https://github.com/r10r/rcswitch-pi) to operate remote radio controlled devices
 
 ## Download
-https://github.com/sui77/rc-switch/releases/latest
+https://github.com/patrickdk77/rc-switch/releases/latest
 
 rc-switch is also listed in the arduino library manager.
 
@@ -13,6 +13,8 @@ rc-switch is also listed in the arduino library manager.
 https://github.com/sui77/rc-switch/wiki
 
 ## Info
+Cloned from sui77/rc-switch due to lack of development and pr commits
+
 ### Send RC codes
 
 Use your Arduino or Raspberry Pi to operate remote radio controlled devices.
@@ -28,6 +30,8 @@ or more devices with one of the supported chipsets:
  - EV1527 / RT1527 / FP1527 / HS1527 
  - Intertechno outlets
  - HT6P20X
+ - M1E-N
+ - ax25-tx028
 
 ### Receive and decode RC codes
 

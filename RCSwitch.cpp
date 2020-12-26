@@ -92,7 +92,15 @@ static const RCSwitch::Protocol PROGMEM proto[] = {
   { 270, { 36,  1 }, {  1,  2 }, {  2,  1 }, true },     // protocol 11 (HT12E)
   { 320, { 36,  1 }, {  1,  2 }, {  2,  1 }, true },     // protocol 12 (SM5212)
   { 346, { 35,  1 }, {  1,  2 }, {  2,  1 }, true },     // protocol 13 (M1E-N 182khz, fanimation)
-  { 400, { 34,  1 }, {  1,  2 }, {  2,  1 }, true }      // protocol 14 (ax25-tx028, hamptonbay/dawnsun)
+  { 400, { 34,  1 }, {  1,  2 }, {  2,  1 }, true },     // protocol 14 (ax25-tx028, hamptonbay/dawnsun)
+  { 80,  {  3, 25 }, {  3, 13 }, { 11,  5 }, false },    // protocol 15 (ORNO OR-GB-417GD)
+  { 82,  {  2, 65 }, {  3,  5 }, {  7,  1 }, false },    // protocol 16 (CLARUS BHC993BF-3)
+  { 560, { 16,  8 }, {  1,  1 }, {  1,  3 }, false },    // protocol 17 (NEC)
+  { 100, {  6, 169}, {  6,  6 }, {  6,  12}, false },    // protocol 18 (Everflourish Single Button)
+  { 100, {  6, 120}, {  6,  6 }, {  6,  12}, false },    // protocol 19 (Everflourish All Buttons)
+  { 100, {  3, 100}, {  3,  8 }, {  8,  3 }, false },    // protocol 20 (Shi Qiong) - 32+1 bit protocol. The last bit is a closing "0"
+  { 500, {  1, 23 }, {  1,  2 }, {  2,  1 }, false },    // protocol 21 InterTechno PAR 1000
+  { 275, {  1, 10 }, {  1,  1 }, {  1,  5 }, false },    // protocol 22 InterTechno self-learning
 };
 
 enum {
@@ -100,7 +108,7 @@ enum {
 };
 
 #if not defined( RCSwitchDisableReceiving )
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
 volatile unsigned long long RCSwitch::nReceivedValue = 0;
 #else
 volatile unsigned long RCSwitch::nReceivedValue = 0;
@@ -458,14 +466,14 @@ char* RCSwitch::getCodeWordD(char sGroup, int nDevice, bool bStatus) {
  */
 void RCSwitch::sendTriState(const char* sCodeWord) {
   // turn the tristate code word into the corresponding bit pattern, then send it
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
   unsigned long long code = 0;
 #else
   unsigned long code = 0;
 #endif
   unsigned int length = 0;
   for (const char* p = sCodeWord; *p; p++) {
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
     code <<= 2LL;
 #else
     code <<= 2L;
@@ -476,7 +484,7 @@ void RCSwitch::sendTriState(const char* sCodeWord) {
         break;
       case 'F':
         // bit pattern 01
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
         code |= 1LL;
 #else
         code |= 1L;
@@ -484,7 +492,7 @@ void RCSwitch::sendTriState(const char* sCodeWord) {
         break;
       case '1':
         // bit pattern 11
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
         code |= 3LL;
 #else
         code |= 3L;
@@ -501,20 +509,20 @@ void RCSwitch::sendTriState(const char* sCodeWord) {
  */
 void RCSwitch::send(const char* sCodeWord) {
   // turn the tristate code word into the corresponding bit pattern, then send it
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
   unsigned long long code = 0;
 #else
   unsigned long code = 0;
 #endif
   unsigned int length = 0;
   for (const char* p = sCodeWord; *p; p++) {
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
     code <<= 1LL;
 #else
     code <<= 1L;
 #endif
     if (*p != '0')
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
       code |= 1LL;
 #else
       code |= 1L;
@@ -529,7 +537,7 @@ void RCSwitch::send(const char* sCodeWord) {
  * bits are sent from MSB to LSB, i.e., first the bit at position length-1,
  * then the bit at position length-2, and so on, till finally the bit at position 0.
  */
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
 void RCSwitch::send(unsigned long long code, unsigned int length) {
 #else
 void RCSwitch::send(unsigned long code, unsigned int length) {
@@ -547,7 +555,7 @@ void RCSwitch::send(unsigned long code, unsigned int length) {
 
   for (int nRepeat = 0; nRepeat < nRepeatTransmit; nRepeat++) {
     for (int i = length-1; i >= 0; i--) {
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
       if (code & (1LL << i))
 #else
       if (code & (1L << i))
@@ -599,6 +607,8 @@ void RCSwitch::enableReceive() {
     RCSwitch::nReceivedBitlength = 0;
 #if defined(RaspberryPi) // Raspberry Pi
     wiringPiISR(this->nReceiverInterrupt, INT_EDGE_BOTH, &handleInterrupt);
+#elif defined(USE_PIN_CHANGE_INTERRUPT)  // Arduino with PinChangeINTerrupt library
+    attachPinChangeInterrupt(this->nReceiverInterrupt, handleInterrupt, CHANGE);
 #else // Arduino
     attachInterrupt(this->nReceiverInterrupt, handleInterrupt, CHANGE);
 #endif
@@ -610,7 +620,11 @@ void RCSwitch::enableReceive() {
  */
 void RCSwitch::disableReceive() {
 #if not defined(RaspberryPi) // Arduino
+#if defined(USE_PIN_CHANGE_INTERRUPT)  // Arduino with PinChangeINTerrupt library
+  detachPinChangeInterrupt(this->nReceiverInterrupt);
+#else // Arduino
   detachInterrupt(this->nReceiverInterrupt);
+#endif // Arduino
 #endif // For Raspberry Pi (wiringPi) you can't unregister the ISR
   this->nReceiverInterrupt = -1;
 }
@@ -623,7 +637,7 @@ void RCSwitch::resetAvailable() {
   RCSwitch::nReceivedValue = 0;
 }
 
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
 unsigned long long RCSwitch::getReceivedValue() {
 #else
 unsigned long RCSwitch::getReceivedValue() {
@@ -663,7 +677,7 @@ bool RECEIVE_ATTR RCSwitch::receiveProtocol(const int p, unsigned int changeCoun
     memcpy_P(&pro, &proto[p-1], sizeof(Protocol));
 #endif
 
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
     unsigned long long code = 0;
 #else
     unsigned long code = 0;
@@ -693,7 +707,7 @@ bool RECEIVE_ATTR RCSwitch::receiveProtocol(const int p, unsigned int changeCoun
     const unsigned int firstDataTiming = (pro.invertedSignal) ? (2) : (1);
 
     for (unsigned int i = firstDataTiming; i < changeCount - 1; i += 2) {
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
         code <<= 1LL;
 #else
         code <<= 1L;
@@ -704,7 +718,7 @@ bool RECEIVE_ATTR RCSwitch::receiveProtocol(const int p, unsigned int changeCoun
         } else if (diff(RCSwitch::timings[i], delay * pro.one.high) < delayTolerance &&
                    diff(RCSwitch::timings[i + 1], delay * pro.one.low) < delayTolerance) {
             // one
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
             code |= 1LL;
 #else
             code |= 1L;

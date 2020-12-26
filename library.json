@@ -9,9 +9,9 @@
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/sui77/rc-switch.git"
+    "url": "https://github.com/patrickdk77/rc-switch.git"
   },
-  "version": "2.6.3",
+  "version": "2.7.0",
   "frameworks": [
         "arduino",
         "energia",

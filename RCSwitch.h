@@ -52,13 +52,17 @@
 
 // At least for the ATTiny X4/X5, receiving has to be disabled due to
 // missing libm depencies (udivmodhi4)
-#if defined( __AVR_ATtinyX5__ ) or defined ( __AVR_ATtinyX4__ )
-#define RCSwitchDisableReceiving
-#endif
+#if defined(USE_PIN_CHANGE_INTERRUPT)
+  #include <PinChangeInterrupt.h> // https://github.com/NicoHood/PinChangeInterrupt
+#else
+  #if defined( __AVR_ATtinyX5__ ) or defined ( __AVR_ATtinyX4__ )
+  #define RCSwitchDisableReceiving
+  #endif // ATtiny
+#endif // USE_PIN_CHANGE_INTERRUPT
 
 // Number of maximum high/Low changes per packet.
 // We can handle up to (unsigned long) => 32 bit * 2 H/L changes per bit + 2 for sync
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
 #define RCSWITCH_MAX_CHANGES 131
 #else
 #define RCSWITCH_MAX_CHANGES 67
@@ -81,7 +85,7 @@ class RCSwitch {
     void switchOff(char sGroup, int nDevice);
 
     void sendTriState(const char* sCodeWord);
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
     void send(unsigned long long code, unsigned int length);
 #else
     void send(unsigned long code, unsigned int length);
@@ -95,7 +99,7 @@ class RCSwitch {
     bool available();
     void resetAvailable();
 
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
     unsigned long long getReceivedValue();
 #else
     unsigned long getReceivedValue();
@@ -179,7 +183,7 @@ class RCSwitch {
 
     #if not defined( RCSwitchDisableReceiving )
     static int nReceiveTolerance;
-#ifdef RCSwitch64
+#if defined(RCSwitch64)
    volatile static unsigned long long nReceivedValue;
 #else
     volatile static unsigned long nReceivedValue;
